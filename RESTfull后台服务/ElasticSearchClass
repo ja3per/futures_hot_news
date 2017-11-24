@@ -1,0 +1,118 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+from elasticsearch import Elasticsearch
+
+
+class ElasticSearchClass(object):
+    def __init__(self, host, port, user, passwrod):
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = passwrod
+        self.connect()
+
+    def connect(self):
+        self.es = Elasticsearch(hosts=[{'host': self.host, 'port': self.port}],
+                                http_auth=(self.user, self.password))
+
+    def count(self, indexname):
+        """
+        :param indexname:
+        :return: 统计index总数
+        """
+        return self.es.count(index=indexname)
+
+    def delete(self, indexname, doc_type, id):
+        """
+        :param indexname:
+        :param doc_type:
+        :param id:
+        :return: 删除index中具体的一条
+        """
+        self.es.delete(index=indexname, doc_type=doc_type, id=id)
+
+    def get(self, indexname, id):
+        return self.es.get(index=indexname, id=id)
+
+    def search(self, indexname, size=10):
+        try:
+            return self.es.search(index=indexname, size=size, sort="@timestamp:desc")
+        except Exception as err:
+            print(err)
+
+
+if __name__ == '__main__':
+    esc = ElasticSearchClass('172.24.177.30', '9200', '', '')
+    # delres = esc.es.delete('data','eastmoney','AV8ue8kzPVfIr0Fohtqm')
+    # print delres
+    # print  esc.get('people',1)
+    # res = esc.es.search(index="data", body={'query':{'match':{'spider_name':'eastmoney'}}}) #获取any=data的所有值
+    # res = esc.es.search(index="data", size=100, body={'query':{'match_all':{}}}) #获取所有数据
+    # res = esc.es.search(index="data",size=1000, body={'query':{"wildcard": {"title": "铜" }}})
+    # res = esc.es.search(index="data",size=1000, body={'query':{"prefix": {"title": "生" }}})
+
+    # res = esc.es.search(index="futures_data", size=10, from_=200, body={'query': {"terms": {"content": ["铜", "煤"]}}})
+    # print '搜索耗时：', res['took'], '秒，结果数：', res['hits']['total'], '条'
+    # for hit in res['hits']['hits']:
+    #     print '来源:', hit["_source"]['spider_name'],
+    #     print '|地址:', hit["_source"]['url'],
+    #     print '|标题:', hit["_source"]['title'],
+    #     print '|关键字:', hit["_source"]['keywords']
+    #
+    # res = esc.es.search(index="futures_data", size=10, body={'query': {"terms": {"title": ["煤"]}}})
+    # print '搜索耗时：', res['took'], '秒，结果数：', res['hits']['total'], '条'
+    # for hit in res['hits']['hits']:
+    #     print '来源:', hit["_source"]['spider_name'],
+    #     print '|地址:', hit["_source"]['url'],
+    #     print '|标题:', hit["_source"]['title'],
+    #     print '|关键字:', hit["_source"]['keywords']
+
+    news_keywords = '人,伊,地震,发生'
+    news_keywords_list = news_keywords.split(",")
+    temp_list = []
+    for kw in news_keywords_list:
+        temp = {"match": {"title": kw}}
+        temp_list.append(kw)
+    res = esc.es.search(index="futures_data_2", size=30, body={
+        'query': {"terms": {"title": temp_list}},
+        'stored_fields': ["title", "url", "spider_name"]
+    })
+    print '2搜索耗时：', res['took'], '秒，结果数：', res['hits']['total'], '条'
+    for hit in res['hits']['hits']:
+        print '来源:', hit["_source"]['spider_name'],
+        print '|地址:', hit["_source"]['url'],
+        print '|标题:', hit["_source"]['title'],
+        print '|关键字:', hit["_source"]['keywords']
+        print '|日期:', hit["_source"]['date']
+
+    # res = esc.es.search(index="futures_data", size=30, body={
+    #     "query": {
+    #         "bool": {
+    #             "must": [
+    #                 {"match": {"title": "人"}},
+    #                 {"match": {"title": "伊"}},
+    #                 {"match": {"title": "地震"}},
+    #                 {"match": {"title": "强震"}}
+    #             ]
+    #         }
+    #     },
+    #     "aggs": {
+    #         "range": {
+    #             "date_range": {
+    #                 "field": "date",
+    #                 "format": "MM-yyy",
+    #                 "ranges": [
+    #                     {"to": "now-1d/d"},
+    #                     {"from": "now-1d/d"}
+    #                 ]
+    #             }
+    #         }
+    #     }
+    # })
+    # print '2搜索耗时：', res['took'], '秒，结果数：', res['hits']['total'], '条'
+    # for hit in res['hits']['hits']:
+    #     print '来源:', hit["_source"]['spider_name'],
+    #     print '|地址:', hit["_source"]['url'],
+    #     print '|标题:', hit["_source"]['title'],
+    #     print '|关键字:', hit["_source"]['keywords']
+    #     print '|日期:', hit["_source"]['date']
