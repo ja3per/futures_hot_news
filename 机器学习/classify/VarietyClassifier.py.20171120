@@ -1,0 +1,81 @@
+import json
+import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.externals import joblib
+
+class VarietyClassifier(object):
+    def __init__(self):
+        self.clf = DecisionTreeClassifier(random_state=1)
+        self.vectorizer = TfidfVectorizer(min_df=0, strip_accents='unicode')
+        with open('save/train1103.json', 'r', encoding='utf-8') as f:
+            self.datas = json.load(f)
+            self.X = [article['key_words'] for article in self.datas]
+            self.vectorizer.fit_transform(self.X)
+            print(self.vectorizer.get_feature_names())
+
+    def loadModel(self, path):
+        self.clf = joblib.load('save/clf.pkl')
+
+
+    def train(self):
+        print(self.X[:10])
+        X_train = self.vectorizer.fit_transform(self.X)
+        self.clf.fit(X_train, self.y)
+        joblib.dump(self.clf, 'save/clf.pkl')
+
+
+    def predict(self, keyword):
+        X_test = self.vectorizer.transform([keyword])
+        y_test = self.clf.predict(X_test)
+
+        return y_test[0]
+
+    def findInAndNotIn(self):
+        for article in self.datas[5000:]:
+            try:
+                if article['type'] == 1:
+                    print('铁矿石IN', article['title'], article['url'])
+            except:
+                pass
+
+        for article in self.datas[5000:]:
+            try:
+                if article['type'] != 1 and article['split_words'].find('铁矿石') >= 0:
+                    print('铁矿石OUT', article['title'], article['url'])
+            except:
+                pass
+
+        for article in self.datas[5000:]:
+            try:
+                if article['type'] == 2:
+                    print('豆粕IN', article['title'], article['url'])
+            except:
+                pass
+
+        for article in self.datas[5000:]:
+            try:
+                if article['type'] != 2 and article['split_words'].find('豆粕') >= 0:
+                    print('豆粕OUT', article['title'], article['url'])
+            except:
+                pass
+
+
+    def showDistribution(self):
+        plt.rcParams['font.sans-serif'] = ['SimHei']
+        x = range(len(self.y))
+
+        plt.bar(x, self.y, width=0.5, label='准确率')
+        plt.show()
+
+
+
+
+
+
+if __name__ == '__main__':
+    clf = VarietyClassifier()
+    # clf.train()
+    # clf.predict()
+    # clf.findInAndNotIn()
+    # clf.showDistribution()
