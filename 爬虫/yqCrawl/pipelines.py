@@ -21,9 +21,13 @@ class YqcrawlPipeline(object):
         item['content'] = item['content'].replace('\r', '').replace('\n', '').replace('\t', '')
         item['split_words'] = []
 
+
+        resp = requests.post('http://172.24.177.30:9200/futures_data/article/', data=json.dumps(dict(item)))
+        respJson = json.loads(resp.text)
+
+        item['es_id'] = respJson['_id']
         r = redis.Redis(connection_pool=self.pool)
         r.lpush(item['spider_name'], dict(item))
-        requests.post('http://172.24.177.30:9200/futures_data/article/', data=json.dumps(dict(item)))
 
         db = self.mongoClient['futures_data']
         posts = db[item['spider_name']]

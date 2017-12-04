@@ -27,3 +27,5 @@ class YqcrawlItem(scrapy.Item):
     description = scrapy.Field()
     # 分词列
     split_words = scrapy.Field()
+    # ES_ID
+    es_id = scrapy.Field()
